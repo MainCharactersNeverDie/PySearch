@@ -1,0 +1,146 @@
+from multiprocessing import Process,Queue
+from math import *
+import copy
+
+#pass functions as dictionary of strings to lamdas(T)->T
+#pass equation string of the form a^1b^3c^2=a^2
+
+#pass check/clip functions of the form lamda(T)->bool
+def backtrack(start, functions, check, clip, structure, depth,N):
+	structureType=0
+	if structureType==0:
+		return _backtrackFull(start, functions,check,clip,depth,N)
+		
+def _backtrackFull(start, functions,check,clip,depth,N):
+    if N<1:
+        raise Exception()
+    
+    disDepth=int(min(floor(log(N,len(functions))),depth))
+    numSplit=int(len(functions)**disDepth)
+   
+    q=Queue(numSplit)
+    ps=[Process(target=_backtrackFullHelperStart, args=(start,functions,check,clip,depth,i,disDepth,q)) for i in range(numSplit)]
+    
+    for i in range(numSplit):
+        ps[i].start()
+    
+    result=[]    
+    for i in range(numSplit):
+        result=result+q.get()
+          
+    return result
+
+def _backtrackFullHelperStart(start,functions,check,clip,depth,x,disDepth,q):
+    oppStack=_getPath(x,functions,disDepth)
+    results=[]
+    newStart=_applyPath(oppStack,start,functions,results)
+    results= results+_backtrackFullHelper(newStart,functions,check,clip,depth-disDepth,oppStack)
+    q.put(results)
+       
+
+def _backtrackFullHelper(start, functions,check,clip,depth,oppstack):
+    if check(start):
+        return [{"path":oppstack,"node":start}]
+    if depth==0:
+        return[]
+		
+    result=[]
+    for f in functions:
+        newNode=functions[f](start)
+        newOppStack=oppstack+[f]
+        if clip(newNode):
+            continue;
+        result=result+_backtrackFullHelper(newNode,functions,check,clip,depth-1,newOppStack)	
+    return result
+	
+def _applyPath(path,start,functions,results):
+	oppStack=[];
+	result=start
+	for x in path:	
+		if clip(result):
+			return ''
+		if check(result):
+			results=results+[{"path":oppstack,"node":result}]
+		result=functions[x](result)
+        oppStack=oppStack+[x] 
+	return result
+
+def _getPath(n,a,d):
+	keys=[x for x in a.keys()]
+	
+	curr=n
+	result=[]
+	for i in range(d):
+		result=result + [keys[int(curr)%int(len(keys))]]
+		curr=curr//len(keys)
+	return result
+	
+
+#AB language
+'''
+start=''
+functions={'AonRight':lambda s: s+'A', 'Reverse':lambda s: s[::-1], 'BonLeft': lambda s: 'B'+s}
+clip=lambda s: False
+check=lambda s: 'A'==s
+depth=6
+N=9
+'''
+
+#N Queens
+n=11
+def placeQueen(board, n,i):
+	board=copy.deepcopy(board)
+	board['board'][board['col']][i]=1
+	board['col']=board['col']+1
+	return board
+
+def checkCollisions(board,n):
+    for i in range(n):
+        for j in range(n):
+            if board['board'][i][j]==1:
+                for k in range(n):
+                    if k==j: 
+                        continue
+                    if board['board'][i][k]==1:
+                        return True
+                for k in range(n):
+                    if k==i:
+                        continue
+                    if board['board'][k][j]==1:
+                        return True
+                for k in range(1,n):
+                    if i-k<0 or j-k<0 :
+                        continue
+                    if board['board'][i-k][j-k]==1:
+                        return True
+                for k in range(1,n):
+                    if i-k<0 or j+k>=n :
+                        continue
+                    if board['board'][i-k][j+k]==1:
+                        return True
+                for k in range(1,n):
+                    if i+k>=n or j+k>=n :
+                        continue
+                    if board['board'][i+k][j+k]==1:
+                        return True
+                for k in range(1,n):
+                    if i-k<0 or j-k<0 :
+                        continue
+                    if board['board'][i-k][j-k]==1:
+                        return True
+    return False
+
+start={'board':[[0 for x in range(n)] for x in range(n)],'col':0}
+functions={}
+listOfLambdas= [lambda board, i=i:placeQueen(board,n,i) for i in range(0,n)]
+
+for i in range(n):
+	functions['QueenAt'+str(i)]=listOfLambdas[i]
+check=lambda board: (board['col']==n)
+clip=lambda board: checkCollisions(board,n)
+depth=n
+N=n
+
+for answer in backtrack(start, functions, check, clip, "", depth,N):
+    print answer["path"]
+print "done"
