@@ -54,16 +54,16 @@ def _backtrackFullHelper(start, functions,check,clip,depth,oppstack):
     return result
 	
 def _applyPath(path,start,functions,results):
-	oppStack=[];
-	result=start
-	for x in path:	
-		if clip(result):
-			return ''
-		if check(result):
-			results=results+[{"path":oppstack,"node":result}]
-		result=functions[x](result)
-        oppStack=oppStack+[x] 
-	return result
+    oppStack=[];
+    result=start
+    for x in path:	
+        if clip(result):
+            return ''
+        if check(result):
+            results=results+[{"path":oppstack,"node":result}]
+        result=functions[x](result)
+    oppStack=oppStack+[x] 
+    return result
 
 def _getPath(n,a,d):
 	keys=[x for x in a.keys()]
@@ -130,17 +130,18 @@ def checkCollisions(board,n):
                         return True
     return False
 
-start={'board':[[0 for x in range(n)] for x in range(n)],'col':0}
-functions={}
-listOfLambdas= [lambda board, i=i:placeQueen(board,n,i) for i in range(0,n)]
+if __name__ =='__main__':
+	start={'board':[[0 for x in range(n)] for x in range(n)],'col':0}
+	functions={}
+	listOfLambdas= [lambda board, i=i:placeQueen(board,n,i) for i in range(0,n)]
 
-for i in range(n):
-	functions['QueenAt'+str(i)]=listOfLambdas[i]
-check=lambda board: (board['col']==n)
-clip=lambda board: checkCollisions(board,n)
-depth=n
-N=n
+	for i in range(n):
+		functions['QueenAt'+str(i)]=listOfLambdas[i]
+	check=lambda board: (board['col']==n)
+	clip=lambda board: checkCollisions(board,n)
+	depth=n
+	N=n
 
-for answer in backtrack(start, functions, check, clip, "", depth,N):
-    print answer["path"]
-print "done"
+	for answer in backtrack(start, functions, check, clip, "", depth,N):
+	    print(answer["path"])
+	print("done")
