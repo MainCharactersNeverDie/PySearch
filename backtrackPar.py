@@ -3,6 +3,52 @@ import dill
 from math import *
 import copy
 
+dill.settings["recurse"]=True
+
+#N Queens
+n=11
+def placeQueen(board, n,i):
+	board=copy.deepcopy(board)
+	board['board'][board['col']][i]=1
+	board['col']=board['col']+1
+	return board
+
+def checkCollisions(board,n):
+    for i in range(n):
+        for j in range(n):
+            if board['board'][i][j]==1:
+                for k in range(n):
+                    if k==j: 
+                        continue
+                    if board['board'][i][k]==1:
+                        return True
+                for k in range(n):
+                    if k==i:
+                        continue
+                    if board['board'][k][j]==1:
+                        return True
+                for k in range(1,n):
+                    if i-k<0 or j-k<0 :
+                        continue
+                    if board['board'][i-k][j-k]==1:
+                        return True
+                for k in range(1,n):
+                    if i-k<0 or j+k>=n :
+                        continue
+                    if board['board'][i-k][j+k]==1:
+                        return True
+                for k in range(1,n):
+                    if i+k>=n or j+k>=n :
+                        continue
+                    if board['board'][i+k][j+k]==1:
+                        return True
+                for k in range(1,n):
+                    if i-k<0 or j-k<0 :
+                        continue
+                    if board['board'][i-k][j-k]==1:
+                        return True
+    return False
+
 #pass functions as dictionary of strings to lamdas(T)->T
 #pass equation string of the form a^1b^3c^2=a^2
 
@@ -98,49 +144,6 @@ depth=6
 N=9
 '''
 
-#N Queens
-n=11
-def placeQueen(board, n,i):
-	board=copy.deepcopy(board)
-	board['board'][board['col']][i]=1
-	board['col']=board['col']+1
-	return board
-
-def checkCollisions(board,n):
-    for i in range(n):
-        for j in range(n):
-            if board['board'][i][j]==1:
-                for k in range(n):
-                    if k==j: 
-                        continue
-                    if board['board'][i][k]==1:
-                        return True
-                for k in range(n):
-                    if k==i:
-                        continue
-                    if board['board'][k][j]==1:
-                        return True
-                for k in range(1,n):
-                    if i-k<0 or j-k<0 :
-                        continue
-                    if board['board'][i-k][j-k]==1:
-                        return True
-                for k in range(1,n):
-                    if i-k<0 or j+k>=n :
-                        continue
-                    if board['board'][i-k][j+k]==1:
-                        return True
-                for k in range(1,n):
-                    if i+k>=n or j+k>=n :
-                        continue
-                    if board['board'][i+k][j+k]==1:
-                        return True
-                for k in range(1,n):
-                    if i-k<0 or j-k<0 :
-                        continue
-                    if board['board'][i-k][j-k]==1:
-                        return True
-    return False
 
 if __name__ =='__main__':
     start={'board':[[0 for x in range(n)] for x in range(n)],'col':0}
