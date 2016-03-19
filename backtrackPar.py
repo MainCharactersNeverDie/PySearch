@@ -1,4 +1,5 @@
 from multiprocessing import Process,Queue
+import dill
 from math import *
 import copy
 
@@ -19,7 +20,10 @@ def _backtrackFull(start, functions,check,clip,depth,N):
     numSplit=int(len(functions)**disDepth)
    
     q=Queue(numSplit)
-    ps=[Process(target=_backtrackFullHelperStart, args=(start,functions,check,clip,depth,i,disDepth,q)) for i in range(numSplit)]
+    data=["" for i in range(numSplit)]
+    for i in range(numSplit):
+        data[i]=dill.dumps({"start":start,"functions":functions,"check":check,"clip":clip,"depth":depth,"x":i,"disDepth":disDepth})
+    ps=[Process(target=_backtrackFullHelperStart, args=(data[i],q)) for i in range(numSplit)]
     
     for i in range(numSplit):
         ps[i].start()
@@ -30,7 +34,15 @@ def _backtrackFull(start, functions,check,clip,depth,N):
           
     return result
 
-def _backtrackFullHelperStart(start,functions,check,clip,depth,x,disDepth,q):
+def _backtrackFullHelperStart(dataString,q):
+    data=dill.loads(dataString)
+    start=data["start"]
+    functions=data["functions"]
+    check=data["check"]
+    clip=data["clip"]
+    depth=data["depth"]
+    x=data["x"]
+    disDepth=data["disDepth"]
     oppStack=_getPath(x,functions,disDepth)
     results=[]
     newStart=_applyPath(oppStack,start,functions,results)
