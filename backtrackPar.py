@@ -1,53 +1,9 @@
 from multiprocessing import Process,Queue
 import dill
 from math import *
-import copy
 
 dill.settings["recurse"]=True
 
-#N Queens
-n=11
-def placeQueen(board, n,i):
-	board=copy.deepcopy(board)
-	board['board'][board['col']][i]=1
-	board['col']=board['col']+1
-	return board
-
-def checkCollisions(board,n):
-    for i in range(n):
-        for j in range(n):
-            if board['board'][i][j]==1:
-                for k in range(n):
-                    if k==j: 
-                        continue
-                    if board['board'][i][k]==1:
-                        return True
-                for k in range(n):
-                    if k==i:
-                        continue
-                    if board['board'][k][j]==1:
-                        return True
-                for k in range(1,n):
-                    if i-k<0 or j-k<0 :
-                        continue
-                    if board['board'][i-k][j-k]==1:
-                        return True
-                for k in range(1,n):
-                    if i-k<0 or j+k>=n :
-                        continue
-                    if board['board'][i-k][j+k]==1:
-                        return True
-                for k in range(1,n):
-                    if i+k>=n or j+k>=n :
-                        continue
-                    if board['board'][i+k][j+k]==1:
-                        return True
-                for k in range(1,n):
-                    if i-k<0 or j-k<0 :
-                        continue
-                    if board['board'][i-k][j-k]==1:
-                        return True
-    return False
 
 #pass functions as dictionary of strings to lamdas(T)->T
 #pass equation string of the form a^1b^3c^2=a^2
@@ -58,6 +14,9 @@ def backtrack(start, functions, check, clip, structure, depth,N):
 	if structureType==0:
 		return _backtrackFull(start, functions,check,clip,depth,N)
 		
+#def _detect(eq, functions):
+    
+    
 def _backtrackFull(start, functions,check,clip,depth,N):
     if N<1:
         raise Exception()
@@ -97,6 +56,8 @@ def _backtrackFullHelperStart(dataString,q):
        
 
 def _backtrackFullHelper(start, functions,check,clip,depth,oppstack):
+    if clip(start):
+        return []
     if check(start):
         return [{"path":oppstack,"node":start}]
     if depth==0:
@@ -118,7 +79,7 @@ def _applyPath(path,start,functions,clip,check,results):
         if clip(result):
             return ''
         if check(result):
-            results=results+[{"path":oppstack,"node":result}]
+            results=results+[{"path":oppStack,"node":result}]
         result=functions[x](result)
     oppStack=oppStack+[x] 
     return result
@@ -133,30 +94,3 @@ def _getPath(n,a,d):
 		curr=curr//len(keys)
 	return result
 	
-
-#AB language
-'''
-start=''
-functions={'AonRight':lambda s: s+'A', 'Reverse':lambda s: s[::-1], 'BonLeft': lambda s: 'B'+s}
-clip=lambda s: False
-check=lambda s: 'A'==s
-depth=6
-N=9
-'''
-
-
-if __name__ =='__main__':
-    start={'board':[[0 for x in range(n)] for x in range(n)],'col':0}
-    functions={}
-    listOfLambdas= [lambda board, i=i:placeQueen(board,n,i) for i in range(0,n)]
-
-    for i in range(n):
-        functions['QueenAt'+str(i)]=listOfLambdas[i]
-    check=lambda board: (board['col']==n)
-    clip=lambda board: checkCollisions(board,n)
-    depth=n
-    N=n
-
-    for answer in backtrack(start, functions, check, clip, "", depth,N):
-        print(answer["path"])
-    print("done")
