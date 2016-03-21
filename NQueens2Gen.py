@@ -1,8 +1,9 @@
 import backtrackPar as search
 import copy
- 
+import time
+
 #N Queens
-n=5
+n=6
 
 def moveQueenDown(board, n):
     board=copy.deepcopy(board)
@@ -74,7 +75,13 @@ if __name__ =='__main__':
     clip=lambda board: (board['col']==n)
     depth=n**2+n
     N=n
+    
+    startT=time.time()
     answers= search.backtrack(start, functions, check, clip, ["(QueenDown)^"+str(n)+"=(QueenDown)"], depth,N)
+    endT=time.time()
+    start2T=time.time()
+    answers= search.backtrack(start, functions, check, clip, [], depth,N)
+    end2T=time.time()
 
     for answer in answers:
         print(answer["node"]["board"])
@@ -86,4 +93,8 @@ if __name__ =='__main__':
     print len(boards)
 
     print("done")
+
+    print "unstructured took: "+str(end2T-start2T)
+    print "structured took:   "+str(endT-startT)
+    print "This is an improvement of: "+str((endT-startT)/(end2T-start2T))+" times" 
 

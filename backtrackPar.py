@@ -67,7 +67,8 @@ def _removeWeirdEquations(structure):
 
 
             if len(RightTerms)==0:
-                result=result+[{"type":"constant","base":LeftExponent,"var":LeftTerms[0][1:-1]}]
+                result=result+[{"type":"constant","base":LeftExponent,
+                                        "var":LeftTerms[0][1:-1]}]
                 continue
 
         LeftExponentString=re.split("\(\w*\)",sides[0])[1]
@@ -90,14 +91,17 @@ def _removeWeirdEquations(structure):
         if LeftVar==RightVar:
             if LeftExponent==RightExponent:
                 continue
-            result=result+[{"type":"constant","base":max(LeftExponent,RightExponent),"var":LeftVar[1:-1]}]
+            result=result+[{"type":"constant",
+                "base":max(LeftExponent,RightExponent),"var":LeftVar[1:-1]}]
         elif LeftExponent==1 and RightExponent==1:
             result=result+[{"type":"replace","x":LeftVar,"y":RightVar}]
         elif LeftExponent==1 or RightExponent==1:
             if LeftExponent==1:
-                result=result+[{"type":"linear","x":LeftVar[1:-1],"y":RightVar[1:-1],"m":RightExponent}]
+                result=result+[{"type":"linear",
+                        "x":LeftVar[1:-1],"y":RightVar[1:-1],"m":RightExponent}]
             else:
-                result=result+[{"type":"linear","x":RightVar[1:-1],"y":LeftVar[1:-1],"m":LeftExponenet}]
+                result=result+[{"type":"linear","x":RightVar[1:-1],
+                        "y":LeftVar[1:-1],"m":LeftExponenet}]
     return result
 
 #This function makes a plan seperating the functions with constant order
@@ -118,7 +122,8 @@ def _getPlan(functions,structure):
 
     return {"frees": frees, "consts":consts}
 
-#
+#This is the main exicuter of the search plan.  It calculates the plan
+#distributes it, and collects the results
 def _exicute(searchPlan, start, check, clip, depth, N):
     if N<1:
         raise Exception()
@@ -140,10 +145,11 @@ def _exicute(searchPlan, start, check, clip, depth, N):
         numSplit=disDepth
     q=Queue(numSplit)
     
-    print numSplit
+    #We have to pre-pickle since python pickling doesn't do lambdas
     data=["" for i in range(numSplit)]
     for i in range(numSplit):
-        data[i]=dill.dumps({"start":start,"check":check,"clip":clip,"depth":depth,"searchPlan":searchPlan,"x":i,"disDepth":disDepth})
+        data[i]=dill.dumps({"start":start,"check":check,"clip":clip,
+                        "depth":depth,"searchPlan":searchPlan,"x":i,"disDepth":disDepth})
     ps=[Process(target=_exicuteHelperStart, args=(data[i],q)) for i in range(numSplit)]
 
     for i in range(numSplit):
@@ -156,6 +162,7 @@ def _exicute(searchPlan, start, check, clip, depth, N):
 
     return result
 
+#un pickles the data, and set up for the revcursive search
 def _exicuteHelperStart(dataString,q):
     data=dill.loads(dataString)
     start=data["start"] 
@@ -168,9 +175,12 @@ def _exicuteHelperStart(dataString,q):
     results=[]
     oppStack=_getFullPath(x,searchPlan["frees"])
     newStart=_applyPath(oppStack,start,searchPlan["frees"],clip,check,results)
-    results=results+_exicuteHelper(oppStack,newStart,check,clip,depth-len(oppStack),searchPlan,_isOuter(x,searchPlan["frees"],disDepth),"")
+    results=results+_exicuteHelper(oppStack,newStart,check,clip,depth-len(oppStack),
+                                  searchPlan,_isOuter(x,searchPlan["frees"],disDepth),"")
     q.put(results)
 
+#Returns whether this is the outer most part of the distribution so the threads
+#know if they need to search outward or just through the constants
 def _isOuter(x,functions,depth):
     d=0
     nodesAtDepth=1
@@ -180,8 +190,12 @@ def _isOuter(x,functions,depth):
         d=d+1
     return d==depth
 
+#Recursive meathod doing backtracking but with optimizations for the constants
+#"bench" is a the last constant uses (if the last thing was a constant)  this 
+#reduces redundency
 def _exicuteHelper(oppStack,start,check,clip,depth,searchPlan,isOuter,bench):
-    #print start
+    
+    #handle easy cases
     if clip(start):
         return []
     if check(start):
@@ -189,6 +203,7 @@ def _exicuteHelper(oppStack,start,check,clip,depth,searchPlan,isOuter,bench):
     if depth<=0:
         return []
 
+    #go through all the consants and search through their space
     result=[]
     for const in searchPlan["consts"]:
         if const==bench:
@@ -200,19 +215,22 @@ def _exicuteHelper(oppStack,start,check,clip,depth,searchPlan,isOuter,bench):
         for i in range(o):
             newNode=f(newNode)
             newOppStack=oppStack+[newOppStack]
-            result=result+_exicuteHelper(newOppStack,newNode,check,clip,depth-i-1,searchPlan,True,const)
-                	
+            result=result+_exicuteHelper(newOppStack,newNode,check,
+                                            clip,depth-i-1,searchPlan,True,const)
+    
+    #if we are on the outer ring of the first layer of distribution or are
+    #on higher layers
     if isOuter:
         for f in searchPlan["frees"]:
             newNode=functions[f](start)
             newOppStack=oppStack+[f]
-            result=result+_exicuteHelper(newOppStack,newNode,check,clip,depth-1,searchPlan,True,"")
+            result=result+_exicuteHelper(newOppStack,newNode,check,
+                                            clip,depth-1,searchPlan,True,"")
     return result
         
 
-
-
-
+#Traslates the number for this process into a unique node that this
+#process is responsible for searching
 def _getFullPath(x,functions):
     d=0
     nodesAtDepth=1
@@ -222,6 +240,8 @@ def _getFullPath(x,functions):
         d=d+1
 
     return _getPath(x,functions,d)
+
+
 
 #This backtrack Methods below are called when no other structure exists
 #These distribute the load only along the leaf nodes whereas the other
@@ -236,7 +256,8 @@ def _backtrackFull(start, functions,check,clip,depth,N):
     q=Queue(numSplit)
     data=["" for i in range(numSplit)]
     for i in range(numSplit):
-        data[i]=dill.dumps({"start":start,"functions":functions,"check":check,"clip":clip,"depth":depth,"x":i,"disDepth":disDepth})
+        data[i]=dill.dumps({"start":start,"functions":functions,
+                  "check":check,"clip":clip,"depth":depth,"x":i,"disDepth":disDepth})
     ps=[Process(target=_backtrackFullHelperStart, args=(data[i],q)) for i in range(numSplit)]
     
     for i in range(numSplit):
@@ -260,7 +281,8 @@ def _backtrackFullHelperStart(dataString,q):
     oppStack=_getPath(x,functions,disDepth)
     results=[]
     newStart=_applyPath(oppStack,start,functions,clip,check,results)
-    results= results+_backtrackFullHelper(newStart,functions,check,clip,depth-disDepth,oppStack)
+    results= results+_backtrackFullHelper(newStart,functions,check,
+                                            clip,depth-disDepth,oppStack)
     q.put(results)
        
 
@@ -303,5 +325,3 @@ def _getPath(n,a,d):
 		curr=curr//len(keys)
 	return result
     
-#print _removeWeirdEquations(["(a)=(a)","(b)=(a)","(a)(b)=(b)(c)","0=(a)","(a)=(a)^10","(c)=(d)^23"])
-
